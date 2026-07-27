@@ -1,5 +1,15 @@
 # @effect/cluster
 
+## 0.60.1
+
+### Patch Changes
+
+- [#6310](https://github.com/Effect-TS/effect/pull/6310) [`63ca816`](https://github.com/Effect-TS/effect/commit/63ca8163e57b75db2f70cebf94e4ddea4e32fe91) Thanks @tim-smart! - Fix EntityManager defect restarts so in-flight requests are replayed instead of being dropped when the old entity scope is interrupted.
+
+- Updated dependencies [[`e5dfd78`](https://github.com/Effect-TS/effect/commit/e5dfd78b252d9314bc3e1dddb9271e1148c22988), [`7ccbd9c`](https://github.com/Effect-TS/effect/commit/7ccbd9cfc78c5e0d71c75c06fb69c80ba5a0b0ac), [`ab2af6d`](https://github.com/Effect-TS/effect/commit/ab2af6d702d0fcd06a5f1657bed3408168305245), [`8a405fd`](https://github.com/Effect-TS/effect/commit/8a405fd8bdd48b741ad928fb66c8f1c009058bdf), [`3d390f2`](https://github.com/Effect-TS/effect/commit/3d390f232bdbc3f0d3d6a2ae3c775084f494b547)]:
+  - @effect/platform@0.97.1
+  - effect@3.22.1
+
 ## 0.60.0
 
 ### Patch Changes
