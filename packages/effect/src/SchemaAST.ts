@@ -3144,7 +3144,10 @@ export const Objects: new(
             return resume(state, index, exit)
           }
           if (exit === InternalParser.sameExit) {
-            if (hasKey) InternalRecord.assignProperty(out, name, value)
+            if (hasKey) {
+              if (name === "__proto__") InternalRecord.assignProperty(out, name, value)
+              else out[name] = value
+            }
             continue
           }
           const terminal = stepProperty(state, property, exit)
