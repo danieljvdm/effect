@@ -44,6 +44,7 @@ import { effectIsExit } from "./internal/effect.ts"
 import * as InternalGraph from "./internal/graph.ts"
 import * as InternalRecord from "./internal/record.ts"
 import * as InternalAnnotations from "./internal/schema/annotations.ts"
+import * as CompilerRegistry from "./internal/schema/compilerRegistry.ts"
 import * as InternalMake from "./internal/schema/make.ts"
 import * as InternalStandardSchema from "./internal/schema/standardSchema.ts"
 import * as InternalToCodec from "./internal/schema/toCodec.ts"
@@ -15905,7 +15906,9 @@ function makeClass<
       return getClassSchema(this).rebuild(ast)
     }
     static make(input: S["~type.make.in"], options?: MakeOptions): Self {
-      return SchemaParser.make(getClassSchema(this) as any)(input ?? {}, options) as Self
+      const schema = getClassSchema(this) as any
+      const make = CompilerRegistry.compilerAdaptersEnabled ? SchemaParser.make(schema) : schema.make
+      return make(input ?? {}, options) as Self
     }
     static makeOption(input: S["~type.make.in"], options?: MakeOptions): Option_.Option<Self> {
       return SchemaParser.makeOption(getClassSchema(this) as any)(input ?? {}, options) as any
