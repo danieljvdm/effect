@@ -18,6 +18,7 @@ import * as Effect from "./Effect.ts"
 import * as Exit from "./Exit.ts"
 import { format, formatPropertyKey } from "./Formatter.ts"
 import { identity, memoize, memoizeIdempotent } from "./Function.ts"
+import { ExitTypeId } from "./internal/core.ts"
 import { effectIsExit, iterateConcurrent, iterateEager, resolveConcurrency } from "./internal/effect.ts"
 import * as InternalRecord from "./internal/record.ts"
 import * as InternalAnnotations from "./internal/schema/annotations.ts"
@@ -3139,10 +3140,11 @@ export const Objects: new(
           const name = property.name
           const hasKey = hasPropertySignature(record, name)
           const value = hasKey ? record[name] : InternalParser.missing
-          const exit = property.parser(value, options)
-          if (!effectIsExit(exit)) {
-            return resume(state, index, exit)
+          const result = property.parser(value, options)
+          if ((result as { readonly [ExitTypeId]?: unknown })[ExitTypeId] === undefined) {
+            return resume(state, index, result)
           }
+          const exit = result as Exit.Exit<unknown, SchemaIssue.Issue>
           if (exit === InternalParser.sameExit) {
             if (hasKey) InternalRecord.assignProperty(out, name, value)
             continue
