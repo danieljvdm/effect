@@ -640,14 +640,19 @@ export class FiberImpl<A = any, E = any> implements Fiber.Fiber<A, E> {
           this.currentOpCount++
           // Refresh the cache because a primitive can replace the fiber context.
           const cache = this.cache
-          if (
-            !yielding &&
-            !cache.preventYield &&
-            cache.scheduler.shouldYield(this as any)
-          ) {
-            yielding = true
-            const prev = current
-            current = flatMap(yieldNow, () => prev as any) as any
+          if (!yielding && !cache.preventYield) {
+            const scheduler = cache.scheduler
+            const shouldYield = scheduler.shouldYield
+            if (
+              shouldYield === Scheduler.mixedSchedulerShouldYield
+                // A getter can replace the context before returning the predicate.
+                ? this.currentOpCount >= this.cache.maxOpsBeforeYield
+                : Reflect.apply(shouldYield, scheduler, [this])
+            ) {
+              yielding = true
+              const prev = current
+              current = flatMap(yieldNow, () => prev as any) as any
+            }
           }
           current = cache.tracerContext
             ? cache.tracerContext(current as any, this)

@@ -214,6 +214,9 @@ export class MixedScheduler implements Scheduler {
   }
 }
 
+/** @internal */
+export const mixedSchedulerShouldYield = MixedScheduler.prototype.shouldYield
+
 class MixedSchedulerDispatcher implements SchedulerDispatcher {
   private tasks = new PriorityBuckets()
   private running: (() => void) | undefined = undefined
