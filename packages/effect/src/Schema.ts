@@ -7522,8 +7522,13 @@ export function makeIsGreaterThanOrEqualTo<T>(options: {
   const gte = Order.isGreaterThanOrEqualTo(options.order)
   const formatter = options.formatter ?? format
   return (minimum: T, annotations?: Annotations.Filter) => {
-    return makeFilter<T>(
-      (input) => gte(input, minimum),
+    return new SchemaAST.Filter<T>(
+      (input, ast, parseOptions) => {
+        const out = gte(input, minimum)
+        return out === undefined || out === true
+          ? undefined
+          : SchemaIssue.normalizeFilterOutput(ast, out, input, parseOptions)
+      },
       {
         expected: `a value greater than or equal to ${formatter(minimum)}`,
         arbitraryConstraint: {
@@ -7922,8 +7927,13 @@ export function isMultipleOf(
  * @since 4.0.0
  */
 export function isInt(annotations?: Annotations.Filter) {
-  return makeFilter(
-    (n: number) => globalThis.Number.isSafeInteger(n),
+  return new SchemaAST.Filter<number>(
+    (input, ast, parseOptions) => {
+      const out = globalThis.Number.isSafeInteger(input)
+      return out === undefined || out === true
+        ? undefined
+        : SchemaIssue.normalizeFilterOutput(ast, out, input, parseOptions)
+    },
     {
       expected: "an integer",
       representation: {
@@ -8449,8 +8459,13 @@ export function isMinLength(minLength: number, annotations?: Annotations.Filter)
 }
 
 function makeIsMinLength(minLength: number, minCodePoints: number, annotations?: Annotations.Filter) {
-  return makeFilter<{ readonly length: number }>(
-    (input) => input.length >= minLength,
+  return new SchemaAST.Filter<{ readonly length: number }>(
+    (input, ast, parseOptions) => {
+      const out = input.length >= minLength
+      return out === undefined || out === true
+        ? undefined
+        : SchemaIssue.normalizeFilterOutput(ast, out, input, parseOptions)
+    },
     {
       expected: `a value with a length of at least ${minLength}`,
       representation: {
