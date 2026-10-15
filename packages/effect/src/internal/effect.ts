@@ -629,6 +629,8 @@ export class FiberImpl<A = any, E = any> implements Fiber.Fiber<A, E> {
     this._running = true
     let yielding = false
     let current: Primitive | Yield = effect
+    // Keep fallback arguments local because the run loop can re-enter.
+    let evaluateArgs: [FiberImpl] | undefined
     this.currentOpCount = 0
     try {
       while (true) {
@@ -649,9 +651,19 @@ export class FiberImpl<A = any, E = any> implements Fiber.Fiber<A, E> {
             const prev = current
             current = flatMap(yieldNow, () => prev as any) as any
           }
-          current = cache.tracerContext
-            ? cache.tracerContext(current as any, this)
-            : (current as any)[evaluate](this)
+          if (cache.tracerContext) {
+            current = cache.tracerContext(current as any, this)
+          } else {
+            const primitive = current as Primitive
+            // A custom getter may replace the context or stack. Read it once.
+            const evaluator = primitive[evaluate]
+            if (evaluator === evaluateCont) {
+              this._stack.push(primitive)
+              current = (primitive as Primitive & Record<typeof args, Primitive>)[args]
+            } else {
+              current = Reflect.apply(evaluator, primitive, evaluateArgs ??= [this])
+            }
+          }
           if (current === Yield) {
             const yielded = this._yielded!
             if (ExitTypeId in yielded) {
