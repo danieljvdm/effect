@@ -1421,7 +1421,7 @@ const fromIteratorUnsafe: (
       while (true) {
         const state = iter.next(value)
         if (state.done) return succeed(state.value)
-        if (!effectIsExit(state.value)) {
+        if (state.value[ExitTypeId] === undefined) {
           fiber._stack.push(this)
           return state.value
         } else if (state.value._tag === "Failure") {
@@ -1852,8 +1852,9 @@ export const flatMapEager: {
     self: Effect.Effect<A, E, R>,
     f: (a: A) => Effect.Effect<B, E2, R2>
   ): Effect.Effect<B, E | E2, R | R2> => {
-    if (effectIsExit(self)) {
-      return self._tag === "Success" ? f(self.value) : self as Exit.Exit<never, E>
+    if ((self as Partial<Exit.Exit<A, E>>)[ExitTypeId] !== undefined) {
+      const exit = self as Exit.Exit<A, E>
+      return exit._tag === "Success" ? f(exit.value) : exit as Exit.Exit<never, E>
     }
     return flatMap(self, f)
   }
