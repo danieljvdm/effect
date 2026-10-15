@@ -3132,7 +3132,7 @@ export const Objects: new(
       const props = compileMembers()
       const record = input as Record<PropertyKey, unknown>
       const out: Record<PropertyKey, unknown> = {}
-      const state: ObjectParserState = { ast, input: record, out, issues: undefined, options }
+      let state: ObjectParserState | undefined
       try {
         for (let index = 0; index < props.length; index++) {
           const property = props[index]
@@ -3141,12 +3141,21 @@ export const Objects: new(
           const value = hasKey ? record[name] : InternalParser.missing
           const exit = property.parser(value, options)
           if (!effectIsExit(exit)) {
+            state ??= { ast, input: record, out, issues: undefined, options }
             return resume(state, index, exit)
           }
           if (exit === InternalParser.sameExit) {
             if (hasKey) InternalRecord.assignProperty(out, name, value)
             continue
           }
+          if (exit._tag === "Success") {
+            const output = (exit as InternalParser.Success<unknown, SchemaIssue.Issue>)[InternalParser.args]
+            if (output !== InternalParser.missing) {
+              InternalRecord.assignProperty(out, name, output)
+              continue
+            }
+          }
+          state ??= { ast, input: record, out, issues: undefined, options }
           const terminal = stepProperty(state, property, exit)
           if (terminal) return terminal
         }
