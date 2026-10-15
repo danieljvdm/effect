@@ -2991,7 +2991,7 @@ export const Objects: new(
         if (!(typeof input === "object" && input !== null && !Array.isArray(input))) {
           return yield* Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
         }
-        compileMembers()
+        if (!properties) compileMembers()
 
         const record = input as Record<PropertyKey, unknown>
         const out: Record<PropertyKey, unknown> = {}
@@ -3129,7 +3129,7 @@ export const Objects: new(
       if (!(typeof input === "object" && input !== null && !Array.isArray(input))) {
         return Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
       }
-      const props = compileMembers()
+      const props = properties ?? compileMembers()
       const record = input as Record<PropertyKey, unknown>
       const out: Record<PropertyKey, unknown> = {}
       const state: ObjectParserState = { ast, input: record, out, issues: undefined, options }
@@ -3764,7 +3764,9 @@ export const Union: new<A extends AST = AST>(
         return Effect.fail(new SchemaIssue.AnyOf(ast, [], input, options))
       }
       if (candidates.length === 1) {
-        const result = parser(candidates[0])(input, options)
+        const i = candidates[0]
+        const child = parsers[i] ??= compile(ast.types[i])
+        const result = child(input, options)
         if ((result as Exit.Exit<unknown, SchemaIssue.Issue>)._tag === "Success") return result
         return effectIsExit(result)
           ? failSingleUnionCandidate(ast, (result as Exit.Failure<unknown, SchemaIssue.Issue>).cause, input, options)
