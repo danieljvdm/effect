@@ -4219,7 +4219,12 @@ export function makeFilter<T>(
   aborted: boolean = false
 ): Filter<T> {
   return new Filter(
-    (input, ast, options) => SchemaIssue.normalizeFilterOutput(ast, filter(input, ast, options), input, options),
+    (input, ast, options) => {
+      const out = filter(input, ast, options)
+      return out === undefined || out === true
+        ? undefined
+        : SchemaIssue.normalizeFilterOutput(ast, out, input, options)
+    },
     annotations,
     aborted
   )
