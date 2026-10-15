@@ -1016,7 +1016,31 @@ export const getUnsafe: {
 } = dual(
   2,
   <Services, I extends Services, S>(self: Context<Services>, service: Key<I, S>): S => {
-    const value = lookup(self, service.key)
+    const key = service.key
+    const impl = self as ContextImpl<Services>
+    let value: unknown
+    // Keep this inline lookup consistent with lookup above.
+    lookupValue: {
+      for (let overlay = impl.overlay; overlay; overlay = overlay.parent) {
+        if (overlay.key === key) {
+          value = overlay.value
+          break lookupValue
+        }
+      }
+      value = impl.base.get(key)
+      // Misses must not advance the counter: reference-default lookups miss the
+      // base on every fiber cache refresh, which would flatten every short-lived
+      // request context and reintroduce the O(services) per-request cost
+      if (value === undefined && !impl.base.has(key)) {
+        value = notFound
+        break lookupValue
+      }
+      if (impl.overlay && ++impl.baseHits >= impl.base.size && impl.baseHits >= FlattenAfterBaseHits) {
+        impl.base = flatten(impl)
+        impl.overlay = undefined
+        impl.depth = 0
+      }
+    }
     if (value === notFound) {
       if (isReference(service)) return getDefaultValue(service as any)
       throw serviceNotFoundError(service)
