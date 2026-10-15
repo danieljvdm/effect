@@ -3137,7 +3137,7 @@ export const Objects: new(
         for (let index = 0; index < props.length; index++) {
           const property = props[index]
           const name = property.name
-          const hasKey = hasPropertySignature(record, name)
+          const hasKey = name === "__proto__" ? Object.hasOwn(record, name) : name in record
           const value = hasKey ? record[name] : InternalParser.missing
           const exit = property.parser(value, options)
           if (!effectIsExit(exit)) {
@@ -3249,7 +3249,7 @@ export function stepProperty(
 
 const parsePropertiesOptions = {
   onItem(s: ObjectParserState, p: ParsedProperty) {
-    if (!hasPropertySignature(s.input, p.name)) {
+    if (!(p.name === "__proto__" ? Object.hasOwn(s.input, p.name) : p.name in s.input)) {
       return p.parser(InternalParser.missing, s.options)
     }
     const value = s.input[p.name]
