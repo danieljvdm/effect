@@ -567,12 +567,10 @@ export const makeExit = <
       return Hash.combine(Hash.string(options.op), Hash.hash(this[args]))
     }
   }
-  const ExitPrimitive = function(this: any, value: unknown) {
-    this[args] = value
-  } as unknown as PrimitiveClass
-  ExitPrimitive.prototype = Proto
   return function(value: unknown) {
-    return new ExitPrimitive(value)
+    const exit = Object.create(Proto)
+    exit[args] = value
+    return exit
   } as Fn
 }
 
