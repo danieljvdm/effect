@@ -201,7 +201,8 @@ export function compile(
 
     return result
   }
-  const parseLocal = specialize === undefined ? parseChecks : specialize(parseChecks)
+  const local = checks || encodingChecks ? parseChecks : parser
+  const parseLocal = specialize === undefined ? local : specialize(local)
   if (!links) {
     return parseLocal
   }
