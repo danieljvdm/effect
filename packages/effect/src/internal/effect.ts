@@ -1238,10 +1238,10 @@ export const gen = <
 > => {
   if (args.length === 1) {
     const body = args[0]
-    return suspend(() => fromIteratorUnsafe(body()))
+    return suspend(() => new IteratorPrimitive(body()))
   }
   const [options, body] = args
-  return suspend(() => fromIteratorUnsafe(body.call(options.self) as any))
+  return suspend(() => new IteratorPrimitive(body.call(options.self) as any))
 }
 
 /** @internal */
@@ -1251,10 +1251,10 @@ export const fnUntraced: Effect.fn.Untraced = (
 ) => {
   const fn = pipeables.length === 0
     ? function(this: any) {
-      return suspend(() => fromIteratorUnsafe(body.apply(this, arguments)))
+      return suspend(() => new IteratorPrimitive(body.apply(this, arguments)))
     }
     : function(this: any) {
-      let effect = suspend(() => fromIteratorUnsafe(body.apply(this, arguments)))
+      let effect = suspend(() => new IteratorPrimitive(body.apply(this, arguments)))
       for (let i = 0; i < pipeables.length; i++) {
         effect = pipeables[i](effect, ...arguments)
       }
@@ -1317,7 +1317,7 @@ const makeFn = (
   return defineFunctionLength(body.length, function(this: any, ...args: Array<any>) {
     let result = suspend(() => {
       const iter = body.apply(this, arguments)
-      return isEffect(iter) ? iter : fromIteratorUnsafe(iter)
+      return isEffect(iter) ? iter : new IteratorPrimitive(iter)
     })
     for (let i = 0; i < pipeables.length; i++) {
       result = pipeables[i](result, ...args)
@@ -1398,9 +1398,9 @@ const fromIteratorEagerUnsafe = (
         return suspend(() => {
           if (isFirstExecution) {
             isFirstExecution = false
-            return flatMap(state.value, (value) => fromIteratorUnsafe(iterator, value))
+            return flatMap(state.value, (value) => new IteratorPrimitive(iterator, value))
           } else {
-            return suspend(() => fromIteratorUnsafe(evaluate()))
+            return suspend(() => new IteratorPrimitive(evaluate()))
           }
         })
       }
@@ -1410,10 +1410,7 @@ const fromIteratorEagerUnsafe = (
   }
 }
 
-const fromIteratorUnsafe: (
-  iterator: Iterator<Effect.Effect<any, any, any>>,
-  initial?: undefined
-) => Effect.Effect<any, any, any> = (function() {
+const IteratorPrimitive = (function() {
   const Proto = makePrimitiveProto({
     op: "Iterator",
     [contA](this: any, value, fiber) {
@@ -1437,11 +1434,12 @@ const fromIteratorUnsafe: (
   const IteratorImpl = function(this: any, iterator: any, initial: any) {
     this.iterator = iterator
     this.initial = initial
-  } as unknown as PrimitiveCtor<[iterator: any, initial: any]>
+  } as unknown as PrimitiveCtor<[
+    iterator: Iterator<Effect.Effect<any, any, any>>,
+    initial?: undefined
+  ]>
   IteratorImpl.prototype = Proto
-  return function(iterator: any, initial?: undefined) {
-    return new IteratorImpl(iterator, initial)
-  } as any
+  return IteratorImpl
 })()
 
 // ----------------------------------------------------------------------------
