@@ -518,12 +518,10 @@ export const makePrimitive = <
   ) => void | ((value: any, fiber: FiberImpl) => void)
 }): Fn => {
   const Proto = makePrimitiveProto(options as any)
-  const PrimitiveImpl = function(this: any, value: any) {
-    this[args] = value
-  } as unknown as PrimitiveClass
-  PrimitiveImpl.prototype = Proto
   return function(value: any) {
-    return new PrimitiveImpl(value)
+    const primitive = Object.create(Proto)
+    primitive[args] = value
+    return primitive
   } as Fn
 }
 
