@@ -1855,7 +1855,7 @@ export const flatMapEager: {
     if (effectIsExit(self)) {
       return self._tag === "Success" ? f(self.value) : self as Exit.Exit<never, E>
     }
-    return flatMap(self, f)
+    return new ContImpl(self, andThenCont, f)
   }
 )
 
@@ -1899,7 +1899,12 @@ export const mapEager: {
   <A, E, R, B>(
     self: Effect.Effect<A, E, R>,
     f: (a: A) => B
-  ): Effect.Effect<B, E, R> => effectIsExit(self) ? exitMap(self, f) : map(self, f)
+  ): Effect.Effect<B, E, R> => {
+    if (effectIsExit(self)) {
+      return self._tag === "Success" ? exitSucceed(f(self.value)) : self as Exit.Exit<never, E>
+    }
+    return new ContImpl(self, mapCont, f)
+  }
 )
 
 /** @internal */
