@@ -1873,7 +1873,7 @@ export const String: new(
   readonly _tag = "String"
   /** @internal */
   getParser() {
-    return fromRefinement(this, Predicate.isString)
+    return fromTypeOf(this, "string")
   }
   /** @internal */
   matchPart(s: string, options: ParseOptions): string | undefined {
@@ -1960,7 +1960,7 @@ export const Number: new(
   readonly _tag = "Number"
   /** @internal */
   getParser() {
-    return fromRefinement(this, Predicate.isNumber)
+    return fromTypeOf(this, "number")
   }
   /** @internal */
   matchKey(s: string, options: ParseOptions): number | undefined {
@@ -4821,6 +4821,14 @@ function fromConst<const T>(
   return (input, options) => {
     if (input === InternalParser.missing) return InternalParser.missingExit
     if (input === value) return succeed
+    return Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
+  }
+}
+
+function fromTypeOf(ast: AST, type: "string" | "number"): SchemaParser.Parser {
+  return (input, options) => {
+    if (input === InternalParser.missing) return InternalParser.missingExit
+    if (typeof input === type) return InternalParser.sameExit
     return Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
   }
 }
